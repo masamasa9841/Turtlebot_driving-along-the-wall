@@ -15,7 +15,7 @@ def callback(msg):
     precure = msg.data
 rospy.init_node('vel_publisher')
 pub = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size=10)
-sub = rospy.Subscriber('oppai', Float64, callback)
+sub = rospy.Subscriber('kinect', Float64, callback)
 sob = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, bumper)
 try:
     while not rospy.is_shutdown():

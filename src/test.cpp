@@ -26,7 +26,7 @@ private:
 depth_estimater::depth_estimater(){
     sub_rgb = nh.subscribe<sensor_msgs::Image>("/camera/rgb/image_color", 1, &depth_estimater::rgbImageCallback, this);
     sub_depth = nh.subscribe<sensor_msgs::Image>("/camera/depth/image", 1, &depth_estimater::depthImageCallback, this);
-    pub = nh.advertise<std_msgs::Float64>("oppai", 1);//
+    pub = nh.advertise<std_msgs::Float64>("kinect", 1);//
     ros::Rate loop_rate(1);//
 }
  
