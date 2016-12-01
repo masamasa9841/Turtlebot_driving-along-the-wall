@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="kinect" name="depth_estimater" type="kinect_node"/>
+  <node pkg="kinect" name="vel_publisher" type="vel_publisher.py"/>
+</launch>  

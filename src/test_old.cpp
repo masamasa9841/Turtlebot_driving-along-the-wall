@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <std_msgs/Float64.h>
+#include <std_msgs/Float64.h>//
 #include <sensor_msgs/image_encodings.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -9,47 +9,77 @@
  
 #define WIDTH   10
 #define HEIGHT  25
-#define WIDTH2   50
-#define HEIGHT2  50
  
 class depth_estimater{
 public:
     depth_estimater();
     ~depth_estimater();
+    void rgbImageCallback(const sensor_msgs::ImageConstPtr& msg);
     void depthImageCallback(const sensor_msgs::ImageConstPtr& msg);
  
 private:
     ros::NodeHandle nh;
     ros::Subscriber sub_rgb, sub_depth;
     ros::Publisher pub;
-    ros::Publisher pub2;
 };
  
 depth_estimater::depth_estimater(){
+    sub_rgb = nh.subscribe<sensor_msgs::Image>("/camera/rgb/image_color", 1, &depth_estimater::rgbImageCallback, this);
     sub_depth = nh.subscribe<sensor_msgs::Image>("/camera/depth/image", 1, &depth_estimater::depthImageCallback, this);
-    pub = nh.advertise<std_msgs::Float64>("left", 1);
-    pub2 = nh.advertise<std_msgs::Float64>("sentor", 1);
-    ros::Rate loop_rate(1);
+    pub = nh.advertise<std_msgs::Float64>("kinect", 1);//
+    ros::Rate loop_rate(1);//
 }
  
 depth_estimater::~depth_estimater(){
 }
  
+void depth_estimater::rgbImageCallback(const sensor_msgs::ImageConstPtr& msg){
+ 
+    int i, j;
+    int x1, x2, y1, y2;
+    int width = WIDTH;
+    int height = HEIGHT;
+    cv_bridge::CvImagePtr cv_ptr;
+ 
+    try{
+        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    }catch (cv_bridge::Exception& ex){
+        ROS_ERROR("error");
+        exit(-1);
+    }
+ 
+    cv::Mat &mat = cv_ptr->image;
+ 
+    //x1 = int(mat.cols / 2) - width;
+    //x2 = int(mat.cols / 2) + width;
+    x1 = 0;
+    x2 = width;
+    y1 = int(mat.rows / 2) - height;
+    y2 = int(mat.rows / 2) + height;
+ 
+    for(i = y1; i < y2; i++){
+        for(j = x1; j < x2; j++){
+            // 0 : blue, 1 : green, 2 : red.
+            mat.data[i * mat.step + j * mat.elemSize() + 0] = 0;
+            mat.data[i * mat.step + j * mat.elemSize() + 1] = 0;
+            //mat.data[i * mat.step + j * mat.elemSize() + 2] = 0;
+        }
+    }
+ 
+    cv::rectangle(cv_ptr->image, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(0, 0, 255), 3, 4);
+    cv::imshow("RGB image", cv_ptr->image);
+    cv::waitKey(10);
+}
+ 
 void depth_estimater::depthImageCallback(const sensor_msgs::ImageConstPtr& msg){
  
-    int x1, x2, y1, y2, x3, x4, y3, y4;
+    int x1, x2, y1, y2;
     int i, j, k;
     int width = WIDTH;
     int height = HEIGHT;
-    int width2 = WIDTH2;
-    int height2 = HEIGHT2;
     double sum = 0.0;
-    double sum2 = 0.0;
     double ave;
-    double ave2;
-
-    std_msgs::Float64 left;
-    std_msgs::Float64 sentor;
+    std_msgs::Float64 tinpo;
     cv_bridge::CvImagePtr cv_ptr;
  
     try{
@@ -62,15 +92,12 @@ void depth_estimater::depthImageCallback(const sensor_msgs::ImageConstPtr& msg){
     cv::Mat depth(cv_ptr->image.rows, cv_ptr->image.cols, CV_32FC1);
     cv::Mat img(cv_ptr->image.rows, cv_ptr->image.cols, CV_8UC1);
  
+    //x1 = int(depth.cols / 5) - width;
+    //x2 = int(depth.cols / 5) + width;
     x1 = 0;
     x2 = width;
     y1 = int(depth.rows / 2) - height;
     y2 = int(depth.rows / 2) + height;
-    
-    x3 = int(depth.cols / 2) - width2;
-    x4 = int(depth.cols / 2) + width2;
-    y3 = int(depth.rows / 2) - height2;
-    y4 = int(depth.rows / 2) + height2;
  
     for(i = 0; i < cv_ptr->image.rows;i++){
         float* Dimage = cv_ptr->image.ptr<float>(i);
@@ -90,27 +117,15 @@ void depth_estimater::depthImageCallback(const sensor_msgs::ImageConstPtr& msg){
                     }
                 }
             }
-            if(i > y3 && i < y4){
-                if(j > x3 && j < x4){
-                    if(Dimage[j] > 0.0){
-                        sum2 += Dimage[j];
-                    }
-                }
-            }
         }
     }
  
     ave = sum / ((width * 2) * (height * 2));
-    ave2 = sum2 / ((width2 * 2) * (height2 * 2));
-
-    left.data = ave;
-    sentor.data = ave2;
-    pub.publish(left);
-    pub2.publish(sentor);
-
-    //ROS_INFO("left:%f[m] sentor:%f[m]", ave, ave2);
+    tinpo.data = ave;
+    pub.publish(tinpo);
+    ROS_INFO("depth : %f [m]", ave);
  
-    //cv::imshow("DEPTH image", img);
+    cv::imshow("DEPTH image", img);
     cv::waitKey(10);
 }
  
