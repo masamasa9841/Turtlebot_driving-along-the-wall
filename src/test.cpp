@@ -28,7 +28,7 @@ private:
 depth_estimater::depth_estimater(){
     sub_depth = nh.subscribe<sensor_msgs::Image>("/camera/depth/image", 1, &depth_estimater::depthImageCallback, this);
     pub = nh.advertise<std_msgs::Float64>("left", 1);
-    pub2 = nh.advertise<std_msgs::Float64>("sentor", 1);
+    pub2 = nh.advertise<std_msgs::Float64>("center", 1);
     ros::Rate loop_rate(1);
 }
  
@@ -49,7 +49,7 @@ void depth_estimater::depthImageCallback(const sensor_msgs::ImageConstPtr& msg){
     double ave2;
 
     std_msgs::Float64 left;
-    std_msgs::Float64 sentor;
+    std_msgs::Float64 center;
     cv_bridge::CvImagePtr cv_ptr;
  
     try{
@@ -104,11 +104,11 @@ void depth_estimater::depthImageCallback(const sensor_msgs::ImageConstPtr& msg){
     ave2 = sum2 / ((width2 * 2) * (height2 * 2));
 
     left.data = ave;
-    sentor.data = ave2;
+    center.data = ave2;
     pub.publish(left);
-    pub2.publish(sentor);
+    pub2.publish(center);
 
-    //ROS_INFO("left:%f[m] sentor:%f[m]", ave, ave2);
+    //ROS_INFO("left:%f[m] center:%f[m]", ave, ave2);
  
     //cv::imshow("DEPTH image", img);
     cv::waitKey(10);
