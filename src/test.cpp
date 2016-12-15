@@ -9,8 +9,8 @@
  
 #define WIDTH   10
 #define HEIGHT  25
-#define WIDTH2   50
-#define HEIGHT2  50
+#define WIDTH2   100
+#define HEIGHT2  100
  
 class depth_estimater{
 public:

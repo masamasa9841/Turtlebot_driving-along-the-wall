@@ -12,45 +12,55 @@ class driving_along_the_wall(object):
         self.sub2 = rospy.Subscriber('center', Float64, self.center_msg,queue_size=1)
         self.sub3 = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, self.bumper)
         self.vel = Twist()
-        self.speed = 0.3
-        self.kp = -3.0
+        self.speed = 0.7
+        self.kp = -1.5
         self.kp2 = 1.0
-        self.left = 0.0
-        self.center = 0.0
+        self.left   = [0.0,0.0,0.0,0.0,0.0]
+        self.center = [0.0,0.0,0.0,0.0,0.0]
+        self.ave = 0.0
+        self.ave2 = 0.0
         self.hit_bumper = False
 
     def left_msg(self, msg):
-        self.left = msg.data
-        #print self.left
+        self.left.append(msg.data)
+        self.left.pop(0)
+        self.ave = sum(self.left) / len(self.left)
 
     def center_msg(self, msg):
-        self.center = msg.data
-        #print self.center
+        self.center.append(msg.data)
+        self.center.pop(0)
+        self.ave2 = sum(self.center) / len(self.center)
+        print self.ave2
 
     def bumper(self, bumper):
         self.hit_bumper = True
 
     def run(self):
         while not rospy.is_shutdown():
-            e = 0.4 - self.left
+            e = 0.4 - self.ave
             p = e * self.kp
-            p2 = self.center * 1.0
-            if p2 > 0:
+
+            if self.ave2 > 0.4:
                 p2 = self.speed
-            elif p2 == 0:
+            else: 
                 p2 = 0.05
+
             if self.hit_bumper:
-                self.vel.linear.x = -0.01
-                self.vel.angular.z = -4.0
+                self.vel.linear.x = -0.05
+                self.vel.angular.z = -1.0
                 self.pub.publish(self.vel)
                 time.sleep(0.2)
                 self.hit_bumper = False
+
             else:
                 self.vel.linear.x = p2
-                if 3 < p:
-                    self.vel.angular.z = 3
+
+                if 5 < p:
+                    self.vel.angular.z = 5.0
+
                 elif -0.5 > p:
                     self.vel.angular.z = -0.5
+
                 else:
                     self.vel.angular.z = p
                 self.pub.publish(self.vel)
